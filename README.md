@@ -14,4 +14,4 @@
 ## Aufgabe 3
 
 - [Unity-Projekt](/03_Aufgabe/Lab03)
-- [Dokumentation](/02_Aufgabe/Physik_Aufgabe_3.pdf)
+- [Dokumentation](/03_Aufgabe/Physik_Aufgabe_3.pdf)
