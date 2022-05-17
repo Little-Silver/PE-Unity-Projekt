@@ -17,35 +17,37 @@ public class CubeController : MonoBehaviour
 {
     private const int DELAY = 4;
 
-    public float springLength; // m
+    public float springLength;   // m
     public float springConstant; // N/m
-    public float startVelocity; // m/s
-    private float velocity1;
-    private float velocity2;
+    public float startVelocity;  // m/s
+    private float velocity1;     // m/s
+    private float velocity2;     // m/s
     public Rigidbody lightCube;
     private Rigidbody heavyCube;
-    private float previousDistance = 10.0f;
-    private bool isPushed = false;
+    private float previousDistance = 10.0f; // m
     private float currentTimeStep; // s
-    private float pushTime; // s
-    private bool catchCube;
+    private float pushTime;        // s
     private float radius = 5.0f;
     float slowdown;
     private List<List<float>> timeSeries;
 
+    private State state;
+
     private bool turning = false;
+
 
     // Start is called before the first frame update
     void Start()
     {
         heavyCube = GetComponent<Rigidbody>();
         timeSeries = new List<List<float>>();
-        velocity1 = startVelocity;
-        velocity2 = 0;
+        velocity1 = startVelocity; // m/s
+        velocity2 = 0; // m/s
         slowdown = 0.0f;
         lightCube.velocity = new Vector3(velocity1, 0, 0);
         heavyCube.velocity = new Vector3(velocity2, 0, 0);
-        catchCube = false;
+        state = State.PRE_SPRING;
+
     }
 
     // Update is called once per frame
@@ -60,43 +62,78 @@ public class CubeController : MonoBehaviour
         currentTimeStep += Time.deltaTime;
         timeSeries.Add(new List<float>() { currentTimeStep, lightCube.velocity.x, heavyCube.velocity.x, heavyCube.position.x, heavyCube.position.y, heavyCube.position.z });
 
-        float distance = heavyCube.position.x - 0.5f - (lightCube.position.x + 0.5f);
-        float forceX = springConstant * (springLength - distance);
+        float distanceBetweenCubes = heavyCube.position.x - 0.5f - (lightCube.position.x + 0.5f);
+        float forceX = springConstant * (springLength - distanceBetweenCubes);
 
-        if (distance <= springLength && !isPushed)
+        switch (state)
         {
-            lightCube.AddForce(new Vector3(-forceX, 0, 0));
-            heavyCube.AddForce(new Vector3(forceX, 0, 0));
+            case State.PRE_SPRING:
+                if (cubesAreTouchingSpring(distanceBetweenCubes, springLength))
+                {
+                    state = State.TOUCHING_BEFORE_LOCK;
+                    goto case State.TOUCHING_BEFORE_LOCK;
+                }
+                break;
+            case State.TOUCHING_BEFORE_LOCK:
+                applyForce(-forceX, forceX);
 
-            if (distance <= previousDistance)
-            {
-                previousDistance = distance;
-            }
-            else
-            {
-                isPushed = true;
-                pushTime = currentTimeStep;
-            }
+                if (maxSpringCompression(distanceBetweenCubes, previousDistance))
+                {
+                    state = State.CONNECTED;
+                    pushTime = currentTimeStep;
+                }
+                else
+                {
+                    previousDistance = distanceBetweenCubes;
+                }
+                break;
+            case State.CONNECTED:
+                if (currentTimeStep - pushTime >= DELAY)
+                {
+                    state = State.TOUCHING_AFTER_LOCK;
+                    goto case State.TOUCHING_AFTER_LOCK;
+                } else 
+                {
+                    applyForce(0, 0);
+                    lightCube.velocity = heavyCube.velocity;
+                }
+                break;
+            case State.TOUCHING_AFTER_LOCK:
+                if (distanceBetweenCubes > springLength)
+                {
+                    state = State.POST_SPRING;
+                    goto case State.POST_SPRING;
+                } else
+                {
+                    applyForce(-forceX, forceX);
+                }
+                break;
+            case State.POST_SPRING:
+                quarterCircle();
+                break;
+            default:
+                break;
         }
-        else if (isPushed)
-        {
-            if (currentTimeStep - pushTime < DELAY)
-            {
-                lightCube.AddForce(new Vector3(0, 0, 0));
-                heavyCube.AddForce(new Vector3(0, 0, 0));
-                lightCube.velocity = heavyCube.velocity;
-            }
-            else if (distance <= springLength)
-            {
-                lightCube.AddForce(new Vector3(-forceX, 0, 0));
-                heavyCube.AddForce(new Vector3(forceX, 0, 0));
-                catchCube = true;
-            }
-        }
-        if (catchCube)
-        {
-            quarterCircle();
-        }
+
+        Debug.Log("State = " + state 
+                + ", Heavy-Cube Velocity (X, Y): " + heavyCube.velocity.x + ", " + heavyCube.velocity.y
+                + ", Heavy-Cube Position (X, Y): " + heavyCube.position.x + ", " + heavyCube.position.y);
+
+    }
+
+    bool cubesAreTouchingSpring(float distanceBetweenCubes, float springLength) {
+        return (distanceBetweenCubes <= springLength);
+    }
+
+    void applyForce(float lightCubeX, float heavyCubeX)
+    {
+        lightCube.AddForce(new Vector3(lightCubeX, 0, 0));
+        heavyCube.AddForce(new Vector3(heavyCubeX, 0, 0));
+    }
+
+    bool maxSpringCompression(float distanceBetweenCubes, float previousDistance)
+    {
+        return (distanceBetweenCubes > previousDistance);
     }
 
     void quarterCircle()
@@ -145,3 +182,17 @@ public class CubeController : MonoBehaviour
         }
     }
 }
+
+enum State
+{
+    ///<summary>This state is applied until the light (left) cube touches the spring the first time.</summary>
+    PRE_SPRING,
+    ///<summary>This state is used while the spring is still being compressed. </summary>
+    TOUCHING_BEFORE_LOCK,
+    ///<summary>This state is used while the spring is staying at max compression for a certain time period. </summary>
+    CONNECTED,
+    ///<summary>This state is used once the spring is "unlocked" but the cubes are still touching the spring. </summary>
+    TOUCHING_AFTER_LOCK,
+    ///<summary>This state is used once the spring spring doesn't touch the cubes anymore. </summary>
+    POST_SPRING
+}    
