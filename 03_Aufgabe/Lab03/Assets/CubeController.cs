@@ -92,21 +92,17 @@ public class CubeController : MonoBehaviour
                 {
                     state = State.TOUCHING_AFTER_LOCK;
                     goto case State.TOUCHING_AFTER_LOCK;
-                } else 
-                {
-                    applyForce(0, 0);
-                    lightCube.velocity = heavyCube.velocity;
-                }
+                } 
+                applyForce(0, 0);
+                lightCube.velocity = heavyCube.velocity;
                 break;
             case State.TOUCHING_AFTER_LOCK:
                 if (distanceBetweenCubes > springLength)
                 {
                     state = State.POST_SPRING;
                     goto case State.POST_SPRING;
-                } else
-                {
-                    applyForce(-forceX, forceX);
-                }
+                } 
+                applyForce(-forceX, forceX);
                 break;
             case State.POST_SPRING:
                 quarterCircle();
