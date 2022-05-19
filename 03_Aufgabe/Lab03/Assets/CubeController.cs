@@ -76,7 +76,6 @@ public class CubeController : MonoBehaviour
                 break;
             case State.TOUCHING_BEFORE_LOCK:
                 applyForce(-forceX, forceX);
-
                 if (maxSpringCompression(distanceBetweenCubes, previousDistance))
                 {
                     state = State.CONNECTED;
@@ -130,7 +129,7 @@ public class CubeController : MonoBehaviour
         }
         if (isRotating)
         {
-            if (lightCube.velocity.sqrMagnitude < 0.001f)
+            if (lightCube.velocity.sqrMagnitude < 0.0007f)
             {
                 lightCube.velocity = Vector3.zero;
                 isRotating = false;
