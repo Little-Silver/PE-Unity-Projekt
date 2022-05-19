@@ -33,7 +33,7 @@ public class CubeController : MonoBehaviour
 
     private State state;
 
-    private bool turning = false;
+    private bool isRotating = false;
 
 
     // Start is called before the first frame update
@@ -112,12 +112,43 @@ public class CubeController : MonoBehaviour
         }
 
         Debug.Log("State = " + state 
-                + ", Heavy-Cube Velocity (X, Y): " + heavyCube.velocity.x + ", " + heavyCube.velocity.y
-                + ", Heavy-Cube Position (X, Y): " + heavyCube.position.x + ", " + heavyCube.position.y);
+                + ", Heavy-Cube Velocity (X, Y, Z): " + heavyCube.velocity.x + ", " + heavyCube.velocity.y + ", " + heavyCube.velocity.z
+                + ", Heavy-Cube Position (X, Y, Z): " + heavyCube.position.x + ", " + heavyCube.position.y + ", " + heavyCube.position.z);
+        Debug.Log("State = " + state
+                + ", Light-Cube Velocity (X, Y, Z): " + lightCube.velocity.x + ", " + lightCube.velocity.y + ", " + lightCube.velocity.z
+                + ", Light-Cube Position (X, Y, Z): " + lightCube.position.x + ", " + lightCube.position.y + ", " + lightCube.position.z);
 
     }
 
-    bool cubesAreTouchingSpring(float distanceBetweenCubes, float springLength) {
+    void quarterCircle()
+    {
+        if (lightCube.position.x <= 5 && !isRotating)
+        {
+            isRotating = true;
+            //the value has to be constant so it is created here once.
+            slowdown = lightCube.mass * lightCube.velocity.sqrMagnitude / (radius * (float)Math.PI);  // v^2/2*s => m*v^2/r*pi
+        }
+        if (isRotating)
+        {
+            if (lightCube.velocity.sqrMagnitude < 0.001f)
+            {
+                lightCube.velocity = Vector3.zero;
+                isRotating = false;
+            }
+
+            lightCube.transform.rotation = Quaternion.LookRotation(lightCube.velocity, Vector3.up);
+            Vector3 F_slowdown = -lightCube.transform.forward * slowdown;
+
+            float forceC = lightCube.velocity.sqrMagnitude / radius * lightCube.mass; //  centripetal force is calculated as follow: v^2/r * m
+            Vector3 F_centripetal = Vector3.Cross(lightCube.velocity.normalized, Vector3.up * forceC); // creates the Vector we need
+
+            Vector3 F_res = F_centripetal + F_slowdown;
+            lightCube.AddForce(F_res);
+        }
+    }
+
+    bool cubesAreTouchingSpring(float distanceBetweenCubes, float springLength)
+    {
         return (distanceBetweenCubes <= springLength);
     }
 
@@ -130,33 +161,6 @@ public class CubeController : MonoBehaviour
     bool maxSpringCompression(float distanceBetweenCubes, float previousDistance)
     {
         return (distanceBetweenCubes > previousDistance);
-    }
-
-    void quarterCircle()
-    {
-        if (lightCube.position.x <= 5 && !turning)
-        {
-            turning = true;
-            //the value has to be constant so it is created here once.
-            slowdown = lightCube.mass * lightCube.velocity.sqrMagnitude / (radius * (float)Math.PI);  //v^2/2*s => m*v^2/r*pi
-        }
-        if (turning)
-        {
-            if (lightCube.velocity.sqrMagnitude < 0.001f)
-            {
-                lightCube.velocity = Vector3.zero;
-                turning = false;
-            }
-
-            lightCube.transform.rotation = Quaternion.LookRotation(lightCube.velocity, Vector3.up);
-            Vector3 F_slowdown = -lightCube.transform.forward * slowdown;
-
-            float forceC = lightCube.velocity.sqrMagnitude / radius * lightCube.mass; //  centripetal force is calculated as follow: v^2/r * m
-            Vector3 F_centripetal = Vector3.Cross(lightCube.velocity.normalized, Vector3.up * forceC); // creates the Vector we need
-
-            Vector3 F_res = F_centripetal + F_slowdown;
-            lightCube.AddForce(F_res);
-        }
     }
 
     void OnApplicationQuit()
