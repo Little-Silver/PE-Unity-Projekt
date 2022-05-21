@@ -125,11 +125,11 @@ public class CubeController : MonoBehaviour
         {
             isRotating = true;
             //the value has to be constant so it is created here once.
-            slowdown = lightCube.mass * lightCube.velocity.sqrMagnitude / (radius * (float)Math.PI);  // v^2/2*s => m*v^2/r*pi
+            slowdown = lightCube.mass * lightCube.velocity.sqrMagnitude / (radius * (float) Math.PI);  // v^2/2*s => m*v^2/r*pi
         }
         if (isRotating)
         {
-            if (lightCube.velocity.sqrMagnitude < 0.0007f)
+            if (lightCube.velocity.sqrMagnitude < 0.001f)
             {
                 lightCube.velocity = Vector3.zero;
                 isRotating = false;
