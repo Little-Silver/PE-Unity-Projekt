@@ -27,8 +27,9 @@ public class CubeController : MonoBehaviour
     private float previousDistance = 10.0f; // m
     private float currentTimeStep; // s
     private float pushTime;        // s
-    private float radius = 5.0f;
-    float slowdown;
+    private float RADIUS = 5.0f;
+    private float GRAVITY = 9.81f;
+    private float mu;
     private List<List<float>> timeSeries;
 
     private State state;
@@ -43,7 +44,6 @@ public class CubeController : MonoBehaviour
         timeSeries = new List<List<float>>();
         velocity1 = startVelocity; // m/s
         velocity2 = 0; // m/s
-        slowdown = 0.0f;
         lightCube.velocity = new Vector3(velocity1, 0, 0);
         heavyCube.velocity = new Vector3(velocity2, 0, 0);
         state = State.PRE_SPRING;
@@ -110,40 +110,48 @@ public class CubeController : MonoBehaviour
                 break;
         }
 
-        Debug.Log("State = " + state 
-                + ", Heavy-Cube Velocity (X, Y, Z): " + heavyCube.velocity.x + ", " + heavyCube.velocity.y + ", " + heavyCube.velocity.z
-                + ", Heavy-Cube Position (X, Y, Z): " + heavyCube.position.x + ", " + heavyCube.position.y + ", " + heavyCube.position.z);
-        Debug.Log("State = " + state
-                + ", Light-Cube Velocity (X, Y, Z): " + lightCube.velocity.x + ", " + lightCube.velocity.y + ", " + lightCube.velocity.z
-                + ", Light-Cube Position (X, Y, Z): " + lightCube.position.x + ", " + lightCube.position.y + ", " + lightCube.position.z);
-
+        
+        //debugCube(heavyCube, state);
     }
 
     void quarterCircle()
     {
+        debugCube(lightCube, state);
+
+
         if (lightCube.position.x <= 5 && !isRotating)
         {
             isRotating = true;
+
             //the value has to be constant so it is created here once.
-            slowdown = lightCube.mass * lightCube.velocity.sqrMagnitude / (radius * (float) Math.PI);  // v^2/2*s => m*v^2/r*pi
+            mu = lightCube.velocity.sqrMagnitude / (RADIUS * (float) Math.PI * GRAVITY); // v^2/2*s => m*v^2/r*pi
         }
         if (isRotating)
         {
-            if (lightCube.velocity.sqrMagnitude < 0.001f)
+            if (hasVirtuallyStopped(lightCube))
             {
                 lightCube.velocity = Vector3.zero;
                 isRotating = false;
             }
 
-            lightCube.transform.rotation = Quaternion.LookRotation(lightCube.velocity, Vector3.up);
-            Vector3 F_slowdown = -lightCube.transform.forward * slowdown;
+            // Zentripetalkraft: F_{Z}
+            float forceZ = lightCube.mass * lightCube.velocity.sqrMagnitude / RADIUS;
+            Vector3 forceCentriputal = Vector3.Cross(lightCube.velocity.normalized, Vector3.up * forceZ);
+            Debug.Log("F_Z: " + vectorString(forceCentriputal));
 
-            float forceC = lightCube.velocity.sqrMagnitude / radius * lightCube.mass; //  centripetal force is calculated as follow: v^2/r * m
-            Vector3 F_centripetal = Vector3.Cross(lightCube.velocity.normalized, Vector3.up * forceC); // creates the Vector we need
+            // Reibungskraft: F_{R}
+            Vector3 forceFriction = lightCube.transform.forward * GRAVITY * lightCube.mass * mu;
+            Debug.Log("F_R: " + vectorString(forceFriction));
 
-            Vector3 F_res = F_centripetal + F_slowdown;
-            lightCube.AddForce(F_res);
+            Vector3 forceResulting = forceCentriputal + forceFriction;
+            lightCube.AddForce(forceResulting);
+
         }
+    }
+
+    bool hasVirtuallyStopped(Rigidbody lightCube)
+    {
+        return lightCube.velocity.sqrMagnitude < 0.001f;
     }
 
     bool cubesAreTouchingSpring(float distanceBetweenCubes, float springLength)
@@ -165,6 +173,18 @@ public class CubeController : MonoBehaviour
     void OnApplicationQuit()
     {
         WriteTimeSeriesToCSV();
+    }
+
+    void debugCube(Rigidbody cube, State state)
+    {
+        Debug.Log("State = " + state
+        + ", Light-Cube Velocity: " + cube.velocity.magnitude + " (X, Y, Z): " + cube.velocity.x + ", " + cube.velocity.y + ", " + cube.velocity.z
+        + ", Light-Cube Position (X, Y, Z): " + cube.position.x + ", " + cube.position.y + ", " + cube.position.z);
+    }
+
+    String vectorString(Vector3 vector)
+    {
+        return " " + vector.magnitude + " (X, Y, Z): " + vector.x + ", " + vector.y + ", " + vector.z;
     }
 
     void WriteTimeSeriesToCSV()
