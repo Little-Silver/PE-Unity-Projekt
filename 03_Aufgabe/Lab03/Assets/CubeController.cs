@@ -31,7 +31,7 @@ public class CubeController : MonoBehaviour
     private float GRAVITY = 9.81f;
     private float mu;
     private List<List<float>> timeSeries;
-
+    private Vector3 vectorInit = new Vector3(5f, 0.5f, -4f);
     private State state;
 
     private bool isRotating = false;
@@ -47,7 +47,7 @@ public class CubeController : MonoBehaviour
         lightCube.velocity = new Vector3(velocity1, 0, 0);
         heavyCube.velocity = new Vector3(velocity2, 0, 0);
         state = State.PRE_SPRING;
-
+        vectorInit = new Vector3(5f, 0.5f, -4f);
     }
 
     // Update is called once per frame
@@ -104,26 +104,20 @@ public class CubeController : MonoBehaviour
                 applyForce(-forceX, forceX);
                 break;
             case State.POST_SPRING:
-                quarterCircle();
+                rotate();
                 break;
             default:
                 break;
         }
-
-        
-        //debugCube(heavyCube, state);
     }
 
-    void quarterCircle()
+    void rotate()
     {
         debugCube(lightCube, state);
-
 
         if (lightCube.position.x <= 5 && !isRotating)
         {
             isRotating = true;
-
-            //the value has to be constant so it is created here once.
             mu = lightCube.velocity.sqrMagnitude / (RADIUS * (float) Math.PI * GRAVITY); // v^2/2*s => m*v^2/r*pi
         }
         if (isRotating)
@@ -134,18 +128,21 @@ public class CubeController : MonoBehaviour
                 isRotating = false;
             }
 
-            // Zentripetalkraft: F_{Z}
+            // Einheitsvektor der Zentripetalkraft
+            Vector3 ez = Vector3.Normalize(lightCube.position - vectorInit);
+
+            // Zentripetalkraft: F_{Z} = m * v^2 / R
             float forceZ = lightCube.mass * lightCube.velocity.sqrMagnitude / RADIUS;
-            Vector3 forceCentriputal = Vector3.Cross(lightCube.velocity.normalized, Vector3.up * forceZ);
-            Debug.Log("F_Z: " + vectorString(forceCentriputal));
+            Vector3 forceCentriputal = -ez * forceZ;
+            //Debug.Log("F_Z: " + vectorString(forceCentriputal));
 
-            // Reibungskraft: F_{R}
-            Vector3 forceFriction = lightCube.transform.forward * GRAVITY * lightCube.mass * mu;
-            Debug.Log("F_R: " + vectorString(forceFriction));
+            // Reibungskraft: F_{R} = g * m * mu
+            Vector3 forceFriction = -Vector3.Normalize(lightCube.velocity) * GRAVITY * lightCube.mass * mu;
+            //Debug.Log("F_R: " + vectorString(forceFriction));
 
+            // Resultierende Kraft: F_{Res} = F_{Z} + F_{R}
             Vector3 forceResulting = forceCentriputal + forceFriction;
             lightCube.AddForce(forceResulting);
-
         }
     }
 
