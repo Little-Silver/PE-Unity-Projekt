@@ -130,7 +130,7 @@ public class CubeController : MonoBehaviour
 
             // Einheitsvektor der Zentripetalkraft
             Vector3 ez = Vector3.Normalize(lightCube.position - vectorInit);
-
+            Debug.Log("Mu: " + mu);
             // Zentripetalkraft: F_{Z} = m * v^2 / R
             float forceZ = lightCube.mass * lightCube.velocity.sqrMagnitude / RADIUS;
             Vector3 forceCentriputal = -ez * forceZ;
