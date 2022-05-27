@@ -60,7 +60,7 @@ public class CubeController : MonoBehaviour
     void FixedUpdate()
     {
         currentTimeStep += Time.deltaTime;
-        timeSeries.Add(new List<float>() { currentTimeStep, lightCube.velocity.x, heavyCube.velocity.x, heavyCube.position.x, heavyCube.position.y, heavyCube.position.z });
+        timeSeries.Add(new List<float>() { currentTimeStep, lightCube.velocity.x, heavyCube.velocity.x, lightCube.position.x, heavyCube.position.x });
 
         float distanceBetweenCubes = heavyCube.position.x - 0.5f - (lightCube.position.x + 0.5f);
         float forceX = springConstant * (springLength - distanceBetweenCubes);
@@ -188,7 +188,7 @@ public class CubeController : MonoBehaviour
     {
         using (var streamWriter = new StreamWriter("time_series.csv"))
         {
-            streamWriter.WriteLine("t, v_lightCube,v_heavyCube, x(t)_heavyCube, y(t)_heavyCube, z(t)_heavyCube");
+            streamWriter.WriteLine("t, v_lightCube, v_heavyCube, x(t)_lightCube, x(t)_heavyCube");
 
             foreach (List<float> timeStep in timeSeries)
             {
