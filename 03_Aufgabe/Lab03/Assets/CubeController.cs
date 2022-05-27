@@ -27,8 +27,8 @@ public class CubeController : MonoBehaviour
     private float previousDistance = 10.0f; // m
     private float currentTimeStep; // s
     private float pushTime;        // s
-    private float RADIUS = 5.0f;
-    private float GRAVITY = 9.81f;
+    private float RADIUS = 5.0f;   // m
+    private float GRAVITY = 9.81f; // m/s^2
     private float mu;
     private List<List<float>> timeSeries;
     private Vector3 vectorInit = new Vector3(5f, 0.5f, -4f);
@@ -47,6 +47,8 @@ public class CubeController : MonoBehaviour
         lightCube.velocity = new Vector3(velocity1, 0, 0);
         heavyCube.velocity = new Vector3(velocity2, 0, 0);
         state = State.PRE_SPRING;
+        
+        //Root position of the string
         vectorInit = new Vector3(5f, 0.5f, -4f);
     }
 
